@@ -29,8 +29,11 @@ contains both 200 and 429 plus request ID,
 IP09 has healthy targets/dashboard/alert, and IP10 contains every required span
 under one trace ID with no error status.
 
-On the current 4 GB laptop, IP07 honestly records `is_real_vllm=false`. The
-in-process summary remains 83 because it deliberately cannot self-probe the
+On 2026-09-03 the 4 GB RTX 3050 laptop ran vLLM 0.8.5 with
+`Qwen/Qwen3-0.6B`. IP07 records `is_real_vllm=true`, the served model, and 81
+native `vllm:` metrics. A gateway RAG request returned a grounded answer with
+the MLflow release and trace ID; no OpenAI-shaped mock was used. The in-process
+summary remains 83 because it deliberately cannot self-probe the
 external Airflow, gateway, dashboard, and trace evidence for IP02/IP08/IP09/IP10;
 those JSON artifacts were produced separately by the live tests. The non-gated
 integration suite still completed with `56 passed, 16 deselected`. The separately

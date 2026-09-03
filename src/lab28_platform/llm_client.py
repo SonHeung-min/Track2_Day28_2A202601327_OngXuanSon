@@ -223,6 +223,12 @@ class VLLMClient:
             ],
             "max_tokens": self._settings.max_tokens,
             "temperature": self._settings.temperature,
+            # Qwen3 otherwise spends most of a small local GPU's token budget
+            # on hidden reasoning. vLLM passes this through to the model's chat
+            # template; models without a thinking mode safely ignore it.
+            "chat_template_kwargs": {
+                "enable_thinking": self._settings.enable_thinking,
+            },
         }
         url = f"{self._settings.base_url.rstrip('/')}/chat/completions"
 
@@ -232,6 +238,7 @@ class VLLMClient:
                 "gen_ai.system": "vllm",
                 "gen_ai.request.model": self._settings.model_id,
                 "gen_ai.request.max_tokens": self._settings.max_tokens,
+                "gen_ai.request.enable_thinking": self._settings.enable_thinking,
             },
         ) as active:
             started = time.perf_counter()

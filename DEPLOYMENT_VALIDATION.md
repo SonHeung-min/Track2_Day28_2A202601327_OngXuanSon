@@ -38,3 +38,18 @@ The API image was built from this repository and live rollout exposed and fixed
 an image contract bug: its original root default conflicted with `runAsNonRoot`.
 The corrected image declares fixed UID/GID `10001:10001`; pods now start under the
 restricted security context. No dependency or readiness response was mocked.
+
+## Real vLLM and LangSmith validation
+
+On 2026-09-03 a real vLLM 0.8.5 server ran under WSL2 on an NVIDIA RTX 3050
+Laptop GPU (4 GB), serving `Qwen/Qwen3-0.6B`. The identity probe observed
+`/health=200`, the vLLM-specific `/version`, the configured model from
+`/v1/models`, and 81 native `vllm:` metric names. A full gateway request used
+release version 8 from MLflow and returned a cited answer. Qwen thinking was
+disabled through `chat_template_kwargs` so the bounded 96-token budget is spent
+on the answer rather than hidden reasoning.
+
+The LangSmith overlay was run with the credential held only in ignored `.env`.
+Its gated test passed (`1 passed, 71 deselected`); the collector exported the
+same 59 spans to its debug, Jaeger, and LangSmith exporters with no recorded
+send failure. Neither the API key nor model weights are committed.

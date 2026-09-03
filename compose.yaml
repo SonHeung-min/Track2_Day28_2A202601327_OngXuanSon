@@ -134,6 +134,7 @@ services:
   spark-connect:
     image: apache/spark:4.2.0-scala2.13-java17-python3-ubuntu
     profiles: ["full"]
+    restart: unless-stopped
     user: "0:0"
     working_dir: /workspace
     command:
@@ -147,6 +148,10 @@ services:
       - spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
       - --conf
       - spark.sql.session.timeZone=UTC
+      - --conf
+      - spark.sql.shuffle.partitions=4
+      - --conf
+      - spark.default.parallelism=4
       - --conf
       - spark.driver.memory=1g
     ports:
@@ -188,7 +193,9 @@ services:
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /workspace/.lab28/airflow/simple-auth-passwords.json
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__PARALLELISM: "4"
-      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: "4"
+      # Spark feature export and FastEmbed indexing have overlapping memory
+      # peaks; serialize them so the full stack fits a 16 GB lab machine.
+      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: "1"
       AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: "1"
       AIRFLOW__API__BASE_URL: http://airflow:8080
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://127.0.0.1:8080/execution/
@@ -221,9 +228,12 @@ services:
       dockerfile: docker/api/Dockerfile
     environment:
       <<: *lab-environment
-      LAB28_VLLM_BASE_URL: ${LAB28_VLLM_BASE_URL:-http://host.docker.internal:8001/v1}
+      LAB28_VLLM_BASE_URL: ${LAB28_VLLM_CONTAINER_BASE_URL:-http://host.docker.internal:8001/v1}
       LAB28_VLLM_MODEL_ID: ${LAB28_VLLM_MODEL_ID:-Qwen/Qwen3-1.7B}
       LAB28_VLLM_REQUIRE_REAL: ${LAB28_VLLM_REQUIRE_REAL:-false}
+      LAB28_VLLM_TIMEOUT: ${LAB28_VLLM_TIMEOUT:-30}
+      LAB28_VLLM_MAX_TOKENS: ${LAB28_VLLM_MAX_TOKENS:-320}
+      LAB28_VLLM_ENABLE_THINKING: ${LAB28_VLLM_ENABLE_THINKING:-false}
       OTEL_SERVICE_NAME: lab28-api
     ports:
       - "${LAB28_API_PORT:-8000}:8000"

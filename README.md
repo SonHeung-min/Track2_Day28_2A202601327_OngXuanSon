@@ -335,7 +335,8 @@ uv run pytest integration-tests -m "not gpu and not langsmith" -q
 
 ### Gate LangSmith (khi có API key hợp lệ)
 
-Không đưa key vào Git. Tạo `.env` cục bộ (file này đã được `.gitignore`) với
+Không đưa key vào Git. Sao chép `.env.example` thành `.env` cục bộ (file đích đã
+được `.gitignore`) rồi điền
 `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` và `LANGSMITH_TRACING=true`, sau đó bật
 overlay để OTel Collector fan-out cùng trace sang Jaeger và LangSmith:
 

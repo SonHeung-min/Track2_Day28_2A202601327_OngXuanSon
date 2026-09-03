@@ -186,6 +186,7 @@ class VLLMSettings:
     timeout_seconds: float
     max_tokens: int
     temperature: float
+    enable_thinking: bool
     require_real: bool
 
     @classmethod
@@ -197,6 +198,7 @@ class VLLMSettings:
             timeout_seconds=_env_float("LAB28_VLLM_TIMEOUT", 30.0),
             max_tokens=_env_int("LAB28_VLLM_MAX_TOKENS", 320),
             temperature=_env_float("LAB28_VLLM_TEMPERATURE", 0.2),
+            enable_thinking=_env_flag("LAB28_VLLM_ENABLE_THINKING", False),
             require_real=_env_flag("LAB28_VLLM_REQUIRE_REAL", True),
         )
 
