@@ -1,0 +1,18 @@
+{
+  "endpoint": "https://api.smith.langchain.com",
+  "project": "lab28-ong-xuan-son",
+  "authenticated": true,
+  "project_found": true,
+  "exporters": [
+    "debug",
+    "otlp/jaeger",
+    "otlphttp/langsmith"
+  ],
+  "sent_spans": {
+    "debug": 59.0,
+    "otlp/jaeger": 59.0,
+    "otlphttp/langsmith": 59.0
+  },
+  "failed_spans": {},
+  "api_key_recorded": false
+}

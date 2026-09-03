@@ -1,8 +1,9 @@
 # Evidence index
 
-Runtime evidence is generated into the ignored `evidence/` directory so local
-databases, credentials, and transient state cannot be accidentally committed.
-Submit that directory separately after reviewing every JSON file for secrets.
+Runtime evidence is generated under `evidence/`. `.gitignore` denies new files
+there by default and explicitly permits only the reviewed submission artifacts
+listed below. This keeps credentials, databases, caches and transient dumps out
+of Git while allowing the required evidence to travel with the GitHub submission.
 
 | Integration point | Required artifact | Generator |
 |---|---|---|
@@ -20,6 +21,7 @@ Submit that directory separately after reviewing every JSON file for secrets.
 | IP10 | `evidence/ip10-langsmith-export.json` | LangSmith gate and collector counters |
 | GitOps | `evidence/gitops-live.json` | Kind/Argo sync, drift, self-heal and Git revert |
 | Summary | `evidence/integration-report.json` | `lab28 evidence` |
+| Fast suite | `evidence/fast-suite.txt` | `uv run pytest tests -q` |
 
 The final review checks that IP01 has `traceparent`, IP02 has a successful run
 and asset event, IP03 has history/time travel, IP04 has freshness and
