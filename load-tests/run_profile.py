@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -20,7 +21,11 @@ def request(url: str) -> tuple[float, int]:
     try:
         with urllib.request.urlopen(f"{url.rstrip('/')}/ready", timeout=10) as response:
             status = response.status
-    except Exception:
+    except urllib.error.HTTPError as exc:
+        # A gateway rejection is an observed HTTP response, not a transport
+        # failure. Keeping 429 distinct makes the reported error budget useful.
+        status = exc.code
+    except (TimeoutError, urllib.error.URLError):
         status = 0
     return (time.perf_counter() - started) * 1000, status
 
@@ -31,18 +36,26 @@ def main() -> None:
     parser.add_argument("--requests", type=int, default=100)
     parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
+    if args.requests <= 0 or args.workers <= 0:
+        parser.error("--requests and --workers must both be positive")
+    started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         results = list(pool.map(lambda _: request(args.url), range(args.requests)))
+    elapsed = time.perf_counter() - started
     durations = [duration for duration, _ in results]
     statuses: dict[str, int] = {}
     for _, status in results:
         statuses[str(status)] = statuses.get(str(status), 0) + 1
+    successful = sum(count for status, count in statuses.items() if 200 <= int(status) < 400)
     print(
         json.dumps(
             {
                 "requests": args.requests,
                 "workers": args.workers,
                 "status_counts": statuses,
+                "elapsed_seconds": elapsed,
+                "throughput_rps": args.requests / elapsed,
+                "error_rate_percent": 100 * (args.requests - successful) / args.requests,
                 "latency_ms": {
                     "p50": percentile(durations, 0.50),
                     "p95": percentile(durations, 0.95),

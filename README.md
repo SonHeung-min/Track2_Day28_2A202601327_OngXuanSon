@@ -333,6 +333,23 @@ Sau khi hai luồng đầu đạt, chạy toàn bộ phần không cần GPU:
 uv run pytest integration-tests -m "not gpu and not langsmith" -q
 ```
 
+### Gate LangSmith (khi có API key hợp lệ)
+
+Không đưa key vào Git. Tạo `.env` cục bộ (file này đã được `.gitignore`) với
+`LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` và `LANGSMITH_TRACING=true`, sau đó bật
+overlay để OTel Collector fan-out cùng trace sang Jaeger và LangSmith:
+
+```text
+docker compose --env-file .env -f compose.yaml -f compose.langsmith.yaml up -d otel-collector
+uv run pytest integration-tests -m langsmith -q
+```
+
+Sau khi gate hoàn tất, quay về collector chỉ-local bằng:
+
+```text
+docker compose -f compose.yaml up -d --force-recreate otel-collector
+```
+
 ### Kết quả mong đợi
 
 - J1: dữ liệu đi qua API → Kafka → Airflow → Delta → Feast/Qdrant → trả kết quả;

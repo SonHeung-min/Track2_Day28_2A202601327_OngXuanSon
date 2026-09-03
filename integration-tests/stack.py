@@ -191,22 +191,53 @@ class Airflow:
         ``logical_date: null`` is what Airflow 3 expects for a run that is not
         filling a schedule interval — sending a made-up date would make the run
         look like a backfill in the UI and in the asset event.
+
+        A timed-out POST has an ambiguous outcome: Airflow may have committed
+        the run before its response reached the client. Reusing one run id and
+        querying it before a bounded retry makes the operation idempotent.
         """
+        dag_run_id = f"it-{run_id()}"
         payload: dict[str, Any] = {
-            "dag_run_id": f"it-{run_id()}",
+            "dag_run_id": dag_run_id,
             "logical_date": None,
             "conf": conf or {},
         }
         if note:
             payload["note"] = note
-        response = httpx.post(
-            f"{self.base_url}/api/v2/dags/{self.dag_id}/dagRuns",
-            headers=self._auth(),
-            json=payload,
-            timeout=HTTP_TIMEOUT,
-        )
-        response.raise_for_status()
-        return response.json()["dag_run_id"]  # type: ignore[no-any-return]
+
+        endpoint = f"{self.base_url}/api/v2/dags/{self.dag_id}/dagRuns"
+        last_timeout: httpx.TimeoutException | None = None
+        for _attempt in range(3):
+            try:
+                response = httpx.post(
+                    endpoint,
+                    headers=self._auth(),
+                    json=payload,
+                    timeout=HTTP_TIMEOUT,
+                )
+            except httpx.TimeoutException as error:
+                last_timeout = error
+                # Resolve the ambiguous write through the control plane. A 404
+                # means it is safe to retry the same id; any other HTTP failure
+                # remains a real test failure.
+                observed = httpx.get(
+                    f"{endpoint}/{dag_run_id}", headers=self._auth(), timeout=HTTP_TIMEOUT
+                )
+                if observed.status_code == 200:
+                    return dag_run_id
+                if observed.status_code != 404:
+                    observed.raise_for_status()
+                continue
+
+            if response.status_code == 409:
+                # The previous request won the race after our existence check.
+                return dag_run_id
+            response.raise_for_status()
+            assert response.json()["dag_run_id"] == dag_run_id
+            return dag_run_id
+
+        assert last_timeout is not None
+        raise last_timeout
 
     def run(self, dag_run_id: str) -> dict[str, Any]:
         return self._get(f"/api/v2/dags/{self.dag_id}/dagRuns/{dag_run_id}")

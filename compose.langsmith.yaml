@@ -1,0 +1,9 @@
+# Optional credentialed overlay. Keep `.env` local and invoke this file only
+# when the LangSmith gate is intentionally being exercised.
+services:
+  otel-collector:
+    environment:
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:?set LANGSMITH_API_KEY in the env file}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-lab28-platform}
+    volumes:
+      - ./monitoring/otel-collector-langsmith.yaml:/etc/otelcol/config.yaml:ro

@@ -1,0 +1,38 @@
+# Evidence index
+
+Runtime evidence is generated into the ignored `evidence/` directory so local
+databases, credentials, and transient state cannot be accidentally committed.
+Submit that directory separately after reviewing every JSON file for secrets.
+
+| Integration point | Required artifact | Generator |
+|---|---|---|
+| IP01 | `evidence/ip01-kafka-consume.json` | J1 golden-path test |
+| IP02 | `evidence/ip02-airflow-run.json` | J1 golden-path test |
+| IP03 | `evidence/ip03-delta-history.json` | `lab28 evidence` |
+| IP04 | `evidence/ip04-feast-online.json` | J1 golden-path test |
+| IP05 | `evidence/ip05-qdrant-search.json` | `lab28 evidence` |
+| IP06 | `evidence/ip06-mlflow-release.json` | J3 promotion/rollback test |
+| IP07 | `evidence/ip07-vllm-identity.json` | `lab28 evidence` with real vLLM |
+| IP08 | `evidence/ip08-gateway.json` | gateway rate-limit test |
+| IP09 | `evidence/ip09-prometheus-targets.json` | Prometheus target test |
+| IP09 | `evidence/ip09-grafana-dashboards.json` | Grafana provisioning test |
+| IP10 | `evidence/ip10-trace.json` | trace-span coverage test |
+| IP10 | `evidence/ip10-langsmith-export.json` | LangSmith gate and collector counters |
+| Summary | `evidence/integration-report.json` | `lab28 evidence` |
+
+The final review checks that IP01 has `traceparent`, IP02 has a successful run
+and asset event, IP03 has history/time travel, IP04 has freshness and
+`delta_version`, IP05 has deterministic IDs and scores, IP06 has provenance,
+IP07 reports `is_real_vllm=true` **only when its GPU gate is actually run**, IP08
+contains both 200 and 429 plus request ID,
+IP09 has healthy targets/dashboard/alert, and IP10 contains every required span
+under one trace ID with no error status.
+
+On the current 4 GB laptop, IP07 honestly records `is_real_vllm=false`. The
+in-process summary remains 83 because it deliberately cannot self-probe the
+external Airflow, gateway, dashboard, and trace evidence for IP02/IP08/IP09/IP10;
+those JSON artifacts were produced separately by the live tests. The non-gated
+integration suite still completed with `56 passed, 16 deselected`. The separately
+gated LangSmith test subsequently completed with `1 passed, 71 deselected`; the
+collector exported spans to Jaeger and `otlphttp/langsmith` with zero observed
+LangSmith send failures.
