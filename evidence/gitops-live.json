@@ -1,0 +1,30 @@
+{
+  "verified_at": "2026-09-03T20:01:48+07:00",
+  "kind_version": "v0.32.0",
+  "kubernetes_server_version": "v1.36.1",
+  "gateway_api_version": "v1.6.1",
+  "argocd_version": "v3.5.2",
+  "application": "lab28-platform",
+  "namespace": "lab28",
+  "repository": "https://github.com/SonHeung-min/Track2_Day28_2A202601327_OngXuanSon.git",
+  "sync_status": "Synced",
+  "health_status": "Degraded",
+  "managed_resources": 10,
+  "self_heal": {
+    "resource": "ConfigMap/lab28-api-config",
+    "field": "LAB28_VLLM_REQUIRE_REAL",
+    "desired_before": "true",
+    "manual_drift": "false",
+    "restored": "true",
+    "drift_at": "2026-09-03T20:00:56.1274078+07:00",
+    "restored_at": "2026-09-03T20:00:58.5125918+07:00"
+  },
+  "rollback": {
+    "candidate_revision": "3a34d4dde5e113dbade1b8ddae773416def4e256",
+    "candidate_value_observed": "candidate",
+    "rollback_revision": "3f6f4a47607d3c29fd44eb49e04481b8b087607e",
+    "candidate_key_present_after_rollback": false
+  },
+  "workload_note": "API pods start non-root; readiness is false because data and vLLM dependencies are not deployed in this Kind cluster.",
+  "fabricated_dependencies": false
+}

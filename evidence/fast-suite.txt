@@ -1,0 +1,16 @@
+Day 28 Track 2 fast-suite evidence
+Verified: 2026-09-03 (Asia/Bangkok)
+
+Command:
+  uv run pytest tests -q
+
+Output:
+  ........................................................................ [ 80%]
+  .................                                                        [100%]
+  89 passed in 5.22s
+
+Related static gates from the same final revision:
+  ruff: all checks passed
+  integration matrix: 245 checks passed
+  Kubernetes/GitOps manifest contracts: passed
+  portability contract: passed

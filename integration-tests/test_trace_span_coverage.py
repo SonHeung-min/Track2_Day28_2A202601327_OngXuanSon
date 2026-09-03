@@ -175,5 +175,30 @@ def test_the_langsmith_export_leg_is_configured_and_healthy(prometheus: Promethe
         "otelcol_exporter_sent_spans_total"
     )
     names = {entry["metric"].get("exporter", "") for entry in exporters}
+    sent = {
+        entry["metric"].get("exporter", ""): float(entry["value"][1]) for entry in exporters
+    }
+    failures = prometheus.query("otelcol_exporter_send_failed_spans") or prometheus.query(
+        "otelcol_exporter_send_failed_spans_total"
+    )
+    failed = {
+        entry["metric"].get("exporter", ""): float(entry["value"][1]) for entry in failures
+    }
 
     assert len(names) >= 2, f"only one span exporter is configured: {sorted(names)}"
+    assert sent.get("otlphttp/langsmith", 0) > 0, sent
+    assert failed.get("otlphttp/langsmith", 0) == 0, failed
+
+    stack.write_evidence(
+        "ip10-langsmith-export.json",
+        {
+            "endpoint": base_url,
+            "project": project,
+            "authenticated": True,
+            "project_found": True,
+            "exporters": sorted(names),
+            "sent_spans": sent,
+            "failed_spans": failed,
+            "api_key_recorded": False,
+        },
+    )

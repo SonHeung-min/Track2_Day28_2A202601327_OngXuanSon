@@ -1,8 +1,28 @@
 .venv/
 .lab28/
+.env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-evidence/
+# Runtime evidence is ignored by default. Only reviewed submission artifacts
+# may be committed; any future dump remains excluded.
+evidence/*
+!evidence/gitops-live.json
+!evidence/integration-report.json
+!evidence/fast-suite.txt
+!evidence/ip01-kafka-consume.json
+!evidence/ip02-airflow-run.json
+!evidence/ip03-delta-history.json
+!evidence/ip04-feast-online.json
+!evidence/ip05-qdrant-search.json
+!evidence/ip06-mlflow-release.json
+!evidence/ip07-vllm-identity.json
+!evidence/ip08-gateway.json
+!evidence/ip09-grafana-dashboards.json
+!evidence/ip09-prometheus-targets.json
+!evidence/ip10-langsmith-export.json
+!evidence/ip10-trace.json
 readiness-report.json

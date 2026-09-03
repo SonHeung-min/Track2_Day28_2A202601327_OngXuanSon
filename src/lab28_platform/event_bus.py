@@ -18,6 +18,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -254,7 +255,12 @@ class BatchConsumer:
         self._consumer.subscribe([self._topic])
 
     def poll_batch(
-        self, max_messages: int, *, idle_polls: int = 3, poll_timeout: float = 1.0
+        self,
+        max_messages: int,
+        *,
+        idle_polls: int = 3,
+        poll_timeout: float = 1.0,
+        startup_polls: int = 15,
     ) -> tuple[list[ConsumedMessage], list[DeadLetterEnvelope]]:
         """Poll up to ``max_messages``.
 
@@ -266,18 +272,39 @@ class BatchConsumer:
         decoded: list[ConsumedMessage] = []
         poison: list[DeadLetterEnvelope] = []
         idle = 0
+        assigned = bool(self._consumer.assignment())
 
-        while len(decoded) + len(poison) < max_messages and idle < idle_polls:
+        while len(decoded) + len(poison) < max_messages:
             message = self._consumer.poll(poll_timeout)
+
+            # Joining a consumer group is asynchronous and is driven by poll().
+            # On a busy broker the first few polls can therefore be empty before
+            # any partition has been assigned. Treating those as an empty topic
+            # lets an Airflow run report success without consuming the records
+            # that triggered it. Give group initialisation a bounded grace
+            # period, then use the shorter idle window once assignment exists.
+            now_assigned = bool(self._consumer.assignment())
+            if now_assigned and not assigned:
+                assigned = True
+                idle = 0
+
             if message is None:
                 idle += 1
+                if idle >= (idle_polls if assigned else startup_polls):
+                    break
                 continue
             if message.error():
                 error = message.error()
                 if error.code() == KafkaError._PARTITION_EOF:
                     idle += 1
+                    if idle >= idle_polls:
+                        break
                     continue
                 raise BrokerUnavailable(str(error))
+
+            # Idle polls must be consecutive. A record proves the broker is
+            # making progress, so allow a fresh idle window for the next one.
+            idle = 0
 
             headers = tuple(message.headers() or ())
             traceparent = traceparent_from_kafka_headers(headers)
@@ -487,7 +514,12 @@ def replay_dead_letters(
 
 
 def dead_letter_count(settings: KafkaSettings, *, timeout: float = 5.0) -> int:
-    """Count messages currently parked on the dead-letter topic."""
+    """Count messages currently parked on the dead-letter topic.
+
+    Kafka can briefly reject metadata/watermark requests while its group or
+    transaction coordinators are loading. A bounded retry keeps this operator
+    query reliable without turning a persistent broker outage into a false zero.
+    """
     consumer = Consumer(
         {
             "bootstrap.servers": settings.bootstrap_servers,
@@ -497,19 +529,26 @@ def dead_letter_count(settings: KafkaSettings, *, timeout: float = 5.0) -> int:
         }
     )
     try:
-        metadata = consumer.list_topics(settings.topic_dlq, timeout=timeout)
-        topic_metadata = metadata.topics.get(settings.topic_dlq)
-        if topic_metadata is None or topic_metadata.error is not None:
-            return 0
-        from confluent_kafka import TopicPartition
+        for attempt in range(3):
+            try:
+                metadata = consumer.list_topics(settings.topic_dlq, timeout=timeout)
+                topic_metadata = metadata.topics.get(settings.topic_dlq)
+                if topic_metadata is None or topic_metadata.error is not None:
+                    return 0
+                from confluent_kafka import TopicPartition
 
-        total = 0
-        for partition_id in topic_metadata.partitions:
-            low, high = consumer.get_watermark_offsets(
-                TopicPartition(settings.topic_dlq, partition_id), timeout=timeout
-            )
-            total += max(0, high - low)
-        return total
+                total = 0
+                for partition_id in topic_metadata.partitions:
+                    low, high = consumer.get_watermark_offsets(
+                        TopicPartition(settings.topic_dlq, partition_id), timeout=timeout
+                    )
+                    total += max(0, high - low)
+                return total
+            except Exception:
+                if attempt == 2:
+                    raise
+                time.sleep(min(0.25, timeout / 10))
+        raise AssertionError("unreachable")
     finally:
         consumer.close()
 
