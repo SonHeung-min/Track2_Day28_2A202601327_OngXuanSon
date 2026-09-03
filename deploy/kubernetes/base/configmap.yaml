@@ -10,5 +10,4 @@ data:
   MLFLOW_TRACKING_URI: http://mlflow.lab28.svc:5000
   LAB28_VLLM_BASE_URL: http://vllm.lab28.svc:8000/v1
   LAB28_VLLM_REQUIRE_REAL: "true"
-  LAB28_GITOPS_RELEASE: candidate
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.lab28.svc:4317
