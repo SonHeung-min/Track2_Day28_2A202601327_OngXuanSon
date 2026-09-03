@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/SonHeung-min/Track2_Day28_2A202601327_OngXuanSon.git
-    targetRevision: ca-nhan-ong-xuan-son
+    targetRevision: 3f6f4a47607d3c29fd44eb49e04481b8b087607e
     path: deploy/kubernetes/base
   destination:
     server: https://kubernetes.default.svc

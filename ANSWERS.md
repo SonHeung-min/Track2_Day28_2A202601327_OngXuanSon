@@ -102,10 +102,10 @@ drift and self-heals it. Rollback reverts the desired Git revision or image tag,
 then verifies replicas, gateway routing, readiness, and trace continuity. Live
 edits are diagnostic only and must never become undocumented desired state.
 
-The checked-in sample Argo CD Application points at the upstream training tag.
-Before a live personal deployment, `repoURL` and `targetRevision` must be changed
-to the student's accessible repository and immutable commit/tag, reviewed, and
-validated. No inaccessible or invented deployment is claimed as live evidence.
+The checked-in Argo CD Application points at the accessible personal repository
+and an immutable, live-validated rollback commit. The recorded Kind exercise
+proved sync, drift self-heal, and desired-state rollback through a Git revert;
+workload dependency health is reported separately and was not fabricated.
 
 ## Contribution
 
@@ -114,4 +114,3 @@ and verified the student-owned IP01/IP03/IP04/IP07-IP08 functions and owns the
 end-to-end validation, evidence collection, incident exercise, performance
 analysis, Kubernetes/GitOps explanation, documentation, and demo narrative for
 IP01-IP10.
-

@@ -6,8 +6,9 @@ Every live claim is tied to a timestamp plus a request, run, trace, Delta, or
 MLflow identifier. A green process status by itself is not accepted as proof.
 GPU, LangSmith, and live Kubernetes gates are reported `UNVERIFIED` when their
 required endpoint, credential, or cluster is not legitimately available.
-For this run the LangSmith credential was supplied locally and its gate passed;
-only GPU-backed vLLM and live Kubernetes remain `UNVERIFIED`.
+For this run the LangSmith credential was supplied locally and its gate passed.
+Kind/Argo CD live sync, self-heal and Git rollback were also verified; only the
+GPU-backed vLLM gate remains `UNVERIFIED`.
 
 ## 1. Architecture and ownership
 

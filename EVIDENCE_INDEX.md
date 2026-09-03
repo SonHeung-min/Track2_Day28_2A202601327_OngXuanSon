@@ -18,6 +18,7 @@ Submit that directory separately after reviewing every JSON file for secrets.
 | IP09 | `evidence/ip09-grafana-dashboards.json` | Grafana provisioning test |
 | IP10 | `evidence/ip10-trace.json` | trace-span coverage test |
 | IP10 | `evidence/ip10-langsmith-export.json` | LangSmith gate and collector counters |
+| GitOps | `evidence/gitops-live.json` | Kind/Argo sync, drift, self-heal and Git revert |
 | Summary | `evidence/integration-report.json` | `lab28 evidence` |
 
 The final review checks that IP01 has `traceparent`, IP02 has a successful run
